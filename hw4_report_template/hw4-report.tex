@@ -1,0 +1,205 @@
+\documentclass{article}
+
+\input{header}
+
+\title{CSCI 2590: Assignment 4}
+
+\author{Full Name \\ sz3684 \\ \url{https://github.com/sz3684/NLP-hw4}}
+
+\date{}
+
+
+\colmfinalcopy
+\begin{document}
+\maketitle
+% \section*{Part I. Q1} No written element, submit \texttt{out\_original.txt}  to autograder.
+\section*{Q0. 1.}
+Please provide a link to your github repository, which contains the code for both Part I and Part II.
+
+\url{https://github.com/sz3684/NLP-hw4}
+
+\section*{Q2. 1.}
+Describe your transformation of dataset.
+
+Our transformation combines two perturbation strategies applied independently to each word with a total probability of 50\%:
+
+\textbf{Synonym Replacement (25\% per word):} For each word, we query WordNet synsets and replace the word with the first available synonym (lemma) that differs from the original. For example, ``movie'' may become ``film'' and ``great'' may become ``outstanding''. This simulates natural lexical variation a user might employ.
+
+\textbf{Typo Introduction (25\% per word):} We simulate keyboard typos by replacing a randomly chosen character in the word with an adjacent key on the QWERTY keyboard layout. For instance, ``the'' might become ``thr'' (since `e' is adjacent to `r'). Words of length $\leq 2$ are left unchanged to avoid creating unrecognizable tokens.
+
+Both transformations are ``reasonable'' because they reflect real-world text variation: users naturally use synonyms and make typing errors. A human reader would assign the same sentiment label to both the original and transformed text.
+
+% \section*{Part I. Q2. 2. No written element, submit \texttt{out\_transformed.txt} to autograder. }
+\section*{Q3. 1}
+\textbf{Report \& Analysis}
+    \begin{itemize}
+        \item \textbf{Accuracy values:}
+        \begin{itemize}
+            \item Original model on original test data: 93.69\%
+            \item Original model on transformed test data: 85.93\%
+            \item Augmented model on original test data: 93.63\%
+            \item Augmented model on transformed test data: 89.59\%
+        \end{itemize}
+
+        \item \textbf{Analysis:}
+        (1) Yes, the model's performance on the transformed test data improved after data augmentation. By training on examples that include synonym replacements and typos, the model learned to be more robust to these perturbations.
+        (2) Data augmentation slightly diminished performance on the original test data. This is expected because the augmented training distribution is slightly shifted away from the clean original data, causing a small trade-off between in-distribution and out-of-distribution performance.
+
+        \item \textbf{Intuitive explanation:}
+        Data augmentation exposes the model to noisy variants of the training data during training. This forces the model to rely on deeper semantic features rather than surface-level lexical patterns. As a result, the model becomes more robust to perturbations at test time. However, this robustness comes at a slight cost to in-distribution accuracy because the model allocates some of its capacity to handle noisy inputs.
+
+        \item \textbf{One limitation:}
+        The augmentation only covers the specific transformations we designed (synonym replacement and typos). It cannot generalize to arbitrary out-of-distribution shifts that differ from the augmentation strategy. For example, if the test-time OOD data involves grammatical restructuring or domain shift (e.g., from movie reviews to product reviews), the augmented model would not benefit, since the augmentation did not expose the model to those types of variation.
+    \end{itemize}
+\section*{Part II. Q4}
+%
+% \section{Data Statistics and Processing (8pt)}
+
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+\toprule
+Statistics Name & Train & Dev \\
+\midrule
+Number of examples & 4225 & 466 \\
+Mean sentence length (words) & 11.0 & 10.9 \\
+Mean SQL query length (words) & 60.9 & 58.9 \\
+Vocabulary size (natural language) & 868 & 444 \\
+Vocabulary size (SQL) & 644 & 393 \\
+\bottomrule
+\end{tabular}
+\caption{Data statistics before any pre-processing (word-level).}
+\label{tab:data_stats_before}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{T5 fine-tuned model} & Train & Dev \\
+\midrule
+Mean sentence length (T5 tokens) & 18.1 & 18.1 \\
+Mean SQL query length (T5 tokens) & 217.4 & 211.1 \\
+Vocabulary size (natural language, token IDs) & 792 & 466 \\
+Vocabulary size (SQL, token IDs) & 556 & 396 \\
+\bottomrule
+\end{tabular}
+\caption{Data statistics after pre-processing with T5 tokenizer (\texttt{google-t5/t5-small}).}
+\label{tab:data_stats_after}
+\end{table}
+
+
+
+\newpage
+
+
+
+
+\section*{Q5}\label{sec:t5}
+
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{p{3.5cm}p{10cm}}
+\toprule
+Design choice & Description \\
+\midrule
+Data processing & Each natural language query is prepended with the prefix ``translate English to SQL: '' before tokenization. SQL queries are tokenized as-is. No additional data cleaning or filtering is applied. \\
+Tokenization & We use the default \texttt{T5TokenizerFast} from the \texttt{google-t5/t5-small} checkpoint for both encoder (NL) and decoder (SQL) inputs. The encoder input includes the EOS token appended by the tokenizer. For the decoder, we use the T5 default \texttt{pad\_token\_id} (0) as the beginning-of-sequence (BOS) token, consistent with T5's \texttt{decoder\_start\_token\_id}. Decoder inputs are the BOS token followed by the SQL tokens (shifted right), and decoder targets are the SQL tokens followed by the EOS token. \\
+Architecture & We fine-tune the entire T5-small model (60.5M parameters), including all encoder and decoder layers. No layers are frozen. \\
+Hyperparameters & Learning rate: $5 \times 10^{-4}$, batch size: 64, optimizer: AdamW (weight decay 0.01), scheduler: linear with 2 warmup epochs, max epochs: 50, early stopping patience: 8 epochs (based on dev loss), generation: beam search with 4 beams and max 512 new tokens. \\
+\bottomrule
+\end{tabular}
+\caption{Details of the best-performing T5 model configurations (fine-tuned)}
+\label{tab:t5_results_ft}
+\end{table}
+
+
+
+
+
+
+\section*{Q6. }
+\label{Q6}
+
+\paragraph{Quantitative Results:}
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+  \toprule
+  System & Query EM & F1 score\\
+  \midrule
+  \multicolumn{3}{l}{\textbf{Dev Results}} \\
+  \midrule
+  T5 fine-tuned & 2.58 & 77.19 \\
+
+  \midrule
+  \multicolumn{3}{l}{\textbf{Test Results}} \\
+  \midrule
+  T5 fine-tuned & -- & TBD (Gradescope) \\
+  \bottomrule
+\end{tabular}
+\caption{Development and test results.}
+\label{tab:results}
+\end{table}
+
+
+\paragraph{Qualitative Error Analysis:}
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{p{2cm}p{3cm}p{3cm}p{5cm}}
+    \toprule
+    \textbf{Error Type}& \textbf{Example Of Error} & \textbf{Error Description} & \textbf{Statistics} \\
+    \midrule
+    SQL Syntax Error & NL: ``flights from boston to baltimore before 8'' $\to$ Pred: \texttt{...BETWEEN 0 AND 800...} $\to$ \texttt{OperationalError: near ``800''} & The model generates SQL with syntax errors such as malformed numeric literals, missing closing parentheses, or incomplete clauses. Often occurs with time constraints where the model fails to properly format integer comparisons. & 68/466 (14.6\%) \\
+    \midrule
+    Wrong FROM/JOIN Clause & NL: ``flights with max stops from boston to SF'' $\to$ Pred uses \texttt{count(DISTINCT flight\_id)} instead of \texttt{SELECT DISTINCT flight\_id} & The model produces valid SQL but uses incorrect SELECT columns, wrong table joins, or incorrect aggregation functions, leading to different result sets than the ground truth. & 44/466 (9.4\%) \\
+    \midrule
+    Output Truncation & NL: complex query with multiple constraints $\to$ Pred SQL is cut off mid-clause & For long SQL queries, the generated output reaches the maximum token limit and is truncated, producing incomplete and invalid SQL. Ground truth SQL can be up to 511 tokens, requiring sufficient generation length. & 49/466 (10.5\%) \\
+    % \bottomrule
+  \end{tabular}
+  \caption{Qualitative error analysis on the dev set (T5 fine-tuned model).}\label{tab:qualitative}
+\end{table}
+
+
+\section*{Q7.}
+
+Provide a link to a Google Drive that contains a model checkpoint used to generate outputs you have submitted.
+
+\url{TODO: Add Google Drive link}
+
+\section*{Extra Credit: }
+N/A
+
+
+
+\section*{AI Usage}
+
+
+\noindent\textbf{1. AI Tools Used} \\
+Claude Code (Claude Opus 4.6) \\
+\hrulefill
+
+
+
+\noindent\textbf{2. How AI Was Used} \\
+Used Claude Code for implementing the training loops, data processing pipelines, and evaluation code. Also used for debugging, writing sbatch scripts, and computing data statistics. All design decisions and analysis were guided by the student. \\
+\hrulefill
+
+
+\noindent\textbf{3. Example Prompts / Interactions} \\
+1. ``Implement the BERT training loop in do\_train() following PyTorch conventions'' \\
+2. ``Implement T5Dataset with proper tokenization using t5-small tokenizer'' \\
+3. ``Compute data statistics (mean lengths, vocab sizes) for the text-to-SQL dataset'' \\
+\hrulefill
+
+
+\section*{Extra Credit: Vibe Jam user study}
+N/A
+
+
+
+
+\end{document}

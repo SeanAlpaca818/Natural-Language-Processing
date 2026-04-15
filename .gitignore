@@ -1,0 +1,40 @@
+# Data files (too large)
+code/part-2/data/flight_database.db
+code/part-2/data/*.nl
+code/part-2/data/*.sql
+
+# Checkpoints and model outputs
+code/part-1/out/
+code/part-1/out_augmented/
+code/part-2/checkpoints/
+code/part-2/records/*.pkl
+code/part-2/results/*.sql
+
+# Submission outputs
+code/part-1/out_*.txt
+submission/
+
+# SLURM logs
+code/part-1/slurm_*.out
+code/part-1/slurm_*.err
+code/part-2/slurm_*.out
+code/part-2/slurm_*.err
+
+# Claude/OMC
+.claude/
+.omc/
+AGENTS.md
+code/AGENTS.md
+code/part-1/AGENTS.md
+code/part-2/AGENTS.md
+code/part-2/data/AGENTS.md
+code/part-2/records/AGENTS.md
+code/part-2/results/AGENTS.md
+hw4_report_template/AGENTS.md
+
+# Python
+__pycache__/
+*.pyc
+
+# PDF
+hw4.pdf
