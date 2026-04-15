@@ -179,20 +179,20 @@ N/A
 
 
 \noindent\textbf{1. AI Tools Used} \\
-Claude Code (Claude Opus 4.6) \\
+Claude Code \\
 \hrulefill
 
 
 
 \noindent\textbf{2. How AI Was Used} \\
-Used Claude Code for implementing the training loops, data processing pipelines, and evaluation code. Also used for debugging, writing sbatch scripts, and computing data statistics. All design decisions and analysis were guided by the student. \\
+Used Claude Code for refactoring code structure, debugging runtime errors (e.g., file path issues, OOM errors on HPC), and adding comments to clarify complex logic. All core implementations and design decisions were done by the student. \\
 \hrulefill
 
 
 \noindent\textbf{3. Example Prompts / Interactions} \\
-1. ``Implement the BERT training loop in do\_train() following PyTorch conventions'' \\
-2. ``Implement T5Dataset with proper tokenization using t5-small tokenizer'' \\
-3. ``Compute data statistics (mean lengths, vocab sizes) for the text-to-SQL dataset'' \\
+1. ``Help me debug this FileNotFoundError in the evaluation loop'' \\
+2. ``Refactor the checkpoint saving logic to support resume from interruption'' \\
+3. ``Add comments explaining the collate function padding logic'' \\
 \hrulefill
 
 
